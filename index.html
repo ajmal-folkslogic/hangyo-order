@@ -348,7 +348,7 @@
           </div>
           <div class="summary-item">
             <span>Paid Amount:</span>
-            <span id="summary-paid-amount">$0.00</span>
+            <span id="summary-paid-amount">₹0.00</span>
           </div>
           <div class="summary-item summary-total">
             <span>Balance Due:</span>
@@ -637,7 +637,7 @@
                     <label>Unit Price</label>
                     <input type="number" class="price-input-field" min="0" step="0.01" value="0">
                 </div>
-                <div class="product-total">Total: $0.00</div>
+                <div class="product-total">Total: ₹0.00</div>
                 <button class="remove-btn">×</button>
             `;
 
@@ -690,7 +690,7 @@
 
           // Calculate row total
           const rowTotal = quantity * unitPrice;
-          totalElement.textContent = `Total: $${rowTotal.toFixed(2)}`;
+          totalElement.textContent = `Total: ₹${rowTotal.toFixed(2)}`;
 
           // Add to overall total
           totalAmount += rowTotal;
@@ -740,14 +740,14 @@
         );
 
         if (totalAmountEl)
-          totalAmountEl.textContent = `$${totalAmount.toFixed(2)}`;
-        if (taxAmountEl) taxAmountEl.textContent = `$${taxAmount.toFixed(2)}`;
+          totalAmountEl.textContent = `₹${totalAmount.toFixed(2)}`;
+        if (taxAmountEl) taxAmountEl.textContent = `₹${taxAmount.toFixed(2)}`;
         if (grandTotalEl)
-          grandTotalEl.textContent = `$${grandTotal.toFixed(2)}`;
+          grandTotalEl.textContent = `₹${grandTotal.toFixed(2)}`;
         if (paidAmountEl)
-          paidAmountEl.textContent = `$${paidAmount.toFixed(2)}`;
+          paidAmountEl.textContent = `₹${paidAmount.toFixed(2)}`;
         if (balanceAmountEl)
-          balanceAmountEl.textContent = `$${balanceAmount.toFixed(2)}`;
+          balanceAmountEl.textContent = `₹${balanceAmount.toFixed(2)}`;
 
         // Update hidden fields for API submission
         const totalAmountHidden = document.getElementById("total-amount");
