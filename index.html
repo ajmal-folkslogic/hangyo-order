@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Creation System</title>
+    <style>
+      :root {
+        --primary: #3498db;
+        --primary-dark: #2980b9;
+        --secondary: #2ecc71;
+        --secondary-dark: #27ae60;
+        --danger: #e74c3c;
+        --danger-dark: #c0392b;
+        --light: #f5f5f5;
+        --dark: #333;
+        --gray: #95a5a6;
+        --border: #ddd;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #f8f9fa;
+        color: var(--dark);
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        color: var(--primary);
+        margin-bottom: 10px;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        margin-bottom: 15px;
+        color: var(--primary);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+      }
+
+      select,
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      select:focus,
+      input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+      }
+
+      .product-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: flex-end;
+      }
+
+      .product-select {
+        flex: 3;
+      }
+
+      .quantity-input,
+      .price-input {
+        flex: 1;
+      }
+
+      .product-total {
+        flex: 1;
+        padding: 10px;
+        background-color: var(--light);
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      .remove-btn {
+        flex: 0 0 40px;
+        background-color: var(--danger);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .remove-btn:hover {
+        background-color: var(--danger-dark);
+      }
+
+      .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: background-color 0.3s;
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+      }
+
+      .btn-secondary {
+        background-color: var(--secondary);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--secondary-dark);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+
+      .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .summary-total {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--primary);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: var(--primary);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        color: var(--danger);
+        background-color: rgba(231, 76, 60, 0.1);
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+      }
+
+      .success {
+        color: var(--secondary);
+        background-color: rgba(46, 204, 113, 0.1);
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+      }
+
+      @media (max-width: 768px) {
+        .product-row {
+          flex-direction: column;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Order Creation System</h1>
+        <p>
+          Create a new shipment order by selecting a distributor and adding
+          products
+        </p>
+      </header>
+
+      <div class="card" id="auth-section">
+        <h2>Authentication</h2>
+        <div class="form-group">
+          <label for="bearer-token">Bearer Token</label>
+          <input
+            type="text"
+            id="bearer-token"
+            placeholder="Enter your bearer token"
+          />
+        </div>
+        <button class="btn btn-primary" id="load-data-btn">Load Data</button>
+      </div>
+
+      <div class="card hidden" id="distributor-section">
+        <h2>Select Distributor</h2>
+        <div class="form-group">
+          <label for="distributor-select">Distributor</label>
+          <select id="distributor-select">
+            <option value="">-- Select a distributor --</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card hidden" id="products-section">
+        <h2>Add Products</h2>
+        <div id="products-container">
+          <div class="product-row">
+            <div class="product-select">
+              <label>Product</label>
+              <select class="product-select-input">
+                <option value="">-- Select a product --</option>
+              </select>
+            </div>
+            <div class="quantity-input">
+              <label>Quantity</label>
+              <input
+                type="number"
+                class="quantity-input-field"
+                min="1"
+                value="1"
+              />
+            </div>
+            <div class="price-input">
+              <label>Unit Price</label>
+              <input
+                type="number"
+                class="price-input-field"
+                min="0"
+                step="0.01"
+                value="0"
+              />
+            </div>
+            <div class="product-total">Total: $0.00</div>
+            <button class="remove-btn">×</button>
+          </div>
+        </div>
+        <button class="btn btn-secondary" id="add-product-btn">
+          Add Another Product
+        </button>
+      </div>
+
+      <div class="card hidden" id="order-summary-section">
+        <h2>Order Summary</h2>
+        <div class="form-group">
+          <label for="customer-ref">Customer Reference Number</label>
+          <input
+            type="text"
+            id="customer-ref"
+            placeholder="e.g., CR-20251010-0515"
+          />
+        </div>
+        <div class="form-group">
+          <label for="payment-ref">Payment Reference Number</label>
+          <input
+            type="text"
+            id="payment-ref"
+            placeholder="e.g., PAY-20251010-0515"
+          />
+        </div>
+        <div class="form-group">
+          <label for="branch-id">Branch ID</label>
+          <input type="text" id="branch-id" placeholder="Enter branch ID" />
+        </div>
+        <div class="form-group">
+          <label for="paid-amount">Paid Amount</label>
+          <input type="number" id="paid-amount" min="0" step="0.01" value="0" />
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span>Total Amount:</span>
+            <span id="summary-total-amount">$0.00</span>
+          </div>
+          <div class="summary-item">
+            <span>Tax Percentage:</span>
+            <span id="summary-tax-percentage">19%</span>
+          </div>
+          <div class="summary-item">
+            <span>Tax Amount:</span>
+            <span id="summary-tax-amount">$0.00</span>
+          </div>
+          <div class="summary-item">
+            <span>Grand Total:</span>
+            <span id="summary-grand-total">$0.00</span>
+          </div>
+          <div class="summary-item">
+            <span>Paid Amount:</span>
+            <span id="summary-paid-amount">$0.00</span>
+          </div>
+          <div class="summary-item summary-total">
+            <span>Balance Due:</span>
+            <span id="summary-balance-amount">$0.00</span>
+          </div>
+        </div>
+
+        <button
+          class="btn btn-primary"
+          id="create-order-btn"
+          style="margin-top: 20px"
+        >
+          Create Shipment
+        </button>
+      </div>
+
+      <div class="loading hidden" id="loading-section">
+        <div class="spinner"></div>
+        <p>Loading data, please wait...</p>
+      </div>
+
+      <div id="message-container"></div>
+
+      <!-- Hidden fields to store calculated values -->
+      <input type="hidden" id="total-amount" />
+      <input type="hidden" id="tax-amount" />
+      <input type="hidden" id="grand-total" />
+      <input type="hidden" id="balance-amount" />
+      <input type="hidden" id="total-items" />
+      <input type="hidden" id="total-crates" />
+      <input type="hidden" id="total-weight" />
+    </div>
+
+    <script>
+      // Configuration
+      const BASE_URL = "http://localhost:9098/api/v1";
+
+      // Global variables
+      let distributors = [];
+      let products = [];
+      let selectedDistributor = null;
+      let taxPercentage = 19;
+
+      // DOM Elements
+      const authSection = document.getElementById("auth-section");
+      const distributorSection = document.getElementById("distributor-section");
+      const productsSection = document.getElementById("products-section");
+      const orderSummarySection = document.getElementById(
+        "order-summary-section"
+      );
+      const loadingSection = document.getElementById("loading-section");
+      const messageContainer = document.getElementById("message-container");
+
+      const bearerTokenInput = document.getElementById("bearer-token");
+      const loadDataBtn = document.getElementById("load-data-btn");
+      const distributorSelect = document.getElementById("distributor-select");
+      const productsContainer = document.getElementById("products-container");
+      const addProductBtn = document.getElementById("add-product-btn");
+      const createOrderBtn = document.getElementById("create-order-btn");
+
+      // Event Listeners
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check if elements exist before adding event listeners
+        if (loadDataBtn) {
+          loadDataBtn.addEventListener("click", loadData);
+        }
+
+        if (distributorSelect) {
+          distributorSelect.addEventListener("change", handleDistributorChange);
+        }
+
+        if (addProductBtn) {
+          addProductBtn.addEventListener("click", addProductRow);
+        }
+
+        if (createOrderBtn) {
+          createOrderBtn.addEventListener("click", createShipment);
+        }
+
+        // Add event listeners to initial product row
+        const initialSelect = document.querySelector(".product-select-input");
+        const initialQuantity = document.querySelector(".quantity-input-field");
+        const initialPrice = document.querySelector(".price-input-field");
+        const initialRemoveBtn = document.querySelector(".remove-btn");
+        const paidAmountInput = document.getElementById("paid-amount");
+
+        if (initialSelect)
+          initialSelect.addEventListener("change", updateProductTotals);
+        if (initialQuantity)
+          initialQuantity.addEventListener("input", updateProductTotals);
+        if (initialPrice)
+          initialPrice.addEventListener("input", updateProductTotals);
+        if (paidAmountInput)
+          paidAmountInput.addEventListener("input", updateProductTotals);
+
+        if (initialRemoveBtn) {
+          initialRemoveBtn.addEventListener("click", (e) => {
+            // Don't remove the last row
+            if (document.querySelectorAll(".product-row").length > 1) {
+              e.target.closest(".product-row").remove();
+              updateProductTotals();
+            }
+          });
+        }
+      });
+
+      // Functions
+      function showMessage(message, type = "error") {
+        messageContainer.innerHTML = `<div class="${type}">${message}</div>`;
+      }
+
+      function clearMessages() {
+        messageContainer.innerHTML = "";
+      }
+
+      function showSection(section) {
+        [
+          authSection,
+          distributorSection,
+          productsSection,
+          orderSummarySection,
+          loadingSection,
+        ].forEach((s) => {
+          if (s) s.classList.add("hidden");
+        });
+        if (section) section.classList.remove("hidden");
+      }
+
+      function showMultipleSections(sections) {
+        [
+          authSection,
+          distributorSection,
+          productsSection,
+          orderSummarySection,
+          loadingSection,
+        ].forEach((s) => {
+          if (s) s.classList.add("hidden");
+        });
+        sections.forEach((section) => {
+          if (section) section.classList.remove("hidden");
+        });
+      }
+
+      async function loadData() {
+        const token = bearerTokenInput.value.trim();
+        if (!token) {
+          showMessage("Please enter a bearer token");
+          return;
+        }
+
+        clearMessages();
+        showSection(loadingSection);
+
+        try {
+          // Load distributors
+          const distributorsResponse = await fetch(`${BASE_URL}/distributor`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!distributorsResponse.ok) {
+            throw new Error(
+              `Failed to load distributors: ${distributorsResponse.status}`
+            );
+          }
+
+          const distributorsData = await distributorsResponse.json();
+          distributors = distributorsData.content || [];
+
+          // Load products
+          const productsResponse = await fetch(`${BASE_URL}/product`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!productsResponse.ok) {
+            throw new Error(
+              `Failed to load products: ${productsResponse.status}`
+            );
+          }
+
+          const productsData = await productsResponse.json();
+          products = productsData.content || [];
+
+          if (distributors.length === 0) {
+            throw new Error("No distributors found");
+          }
+
+          if (products.length === 0) {
+            throw new Error("No products found");
+          }
+
+          // Populate distributor dropdown
+          populateDistributorDropdown();
+
+          // Populate product dropdowns
+          populateProductDropdowns();
+
+          // Show distributor section
+          showSection(distributorSection);
+        } catch (error) {
+          console.error("Error loading data:", error);
+          showMessage(`Error: ${error.message}`);
+          showSection(authSection);
+        }
+      }
+
+      function populateDistributorDropdown() {
+        if (!distributorSelect) return;
+
+        distributorSelect.innerHTML =
+          '<option value="">-- Select a distributor --</option>';
+
+        distributors.forEach((distributor) => {
+          const option = document.createElement("option");
+          option.value = distributor.id;
+          option.textContent = `${distributor.distributorName} - ${distributor.hub}`;
+          distributorSelect.appendChild(option);
+        });
+      }
+
+      function populateProductDropdowns() {
+        const productSelects = document.querySelectorAll(
+          ".product-select-input"
+        );
+
+        productSelects.forEach((select) => {
+          if (!select) return;
+
+          // Store current value
+          const currentValue = select.value;
+
+          // Clear and repopulate
+          select.innerHTML = '<option value="">-- Select a product --</option>';
+
+          products.forEach((product) => {
+            const option = document.createElement("option");
+            option.value = product.id;
+            option.textContent = `${product.productName} (${product.crate.crateType})`;
+            option.dataset.product = JSON.stringify(product);
+            select.appendChild(option);
+          });
+
+          // Restore value if it exists
+          if (currentValue) {
+            select.value = currentValue;
+          }
+        });
+
+        // Update product totals
+        updateProductTotals();
+      }
+
+      function handleDistributorChange() {
+        const distributorId = distributorSelect.value;
+        selectedDistributor =
+          distributors.find((d) => d.id === distributorId) || null;
+
+        if (selectedDistributor) {
+          // Show both products section and order summary section
+          showMultipleSections([productsSection, orderSummarySection]);
+        } else {
+          // Only show distributor section if no distributor selected
+          showSection(distributorSection);
+        }
+      }
+
+      function addProductRow() {
+        const productRow = document.createElement("div");
+        productRow.className = "product-row";
+        productRow.innerHTML = `
+                <div class="product-select">
+                    <label>Product</label>
+                    <select class="product-select-input">
+                        <option value="">-- Select a product --</option>
+                    </select>
+                </div>
+                <div class="quantity-input">
+                    <label>Quantity</label>
+                    <input type="number" class="quantity-input-field" min="1" value="1">
+                </div>
+                <div class="price-input">
+                    <label>Unit Price</label>
+                    <input type="number" class="price-input-field" min="0" step="0.01" value="0">
+                </div>
+                <div class="product-total">Total: $0.00</div>
+                <button class="remove-btn">×</button>
+            `;
+
+        productsContainer.appendChild(productRow);
+
+        // Add event listeners to new row
+        const select = productRow.querySelector(".product-select-input");
+        const quantityInput = productRow.querySelector(".quantity-input-field");
+        const priceInput = productRow.querySelector(".price-input-field");
+        const removeBtn = productRow.querySelector(".remove-btn");
+
+        if (select) select.addEventListener("change", updateProductTotals);
+        if (quantityInput)
+          quantityInput.addEventListener("input", updateProductTotals);
+        if (priceInput)
+          priceInput.addEventListener("input", updateProductTotals);
+        if (removeBtn) {
+          removeBtn.addEventListener("click", () => {
+            // Don't remove the last row
+            if (document.querySelectorAll(".product-row").length > 1) {
+              productRow.remove();
+              updateProductTotals();
+            }
+          });
+        }
+
+        // Populate the product dropdown
+        populateProductDropdowns();
+      }
+
+      function updateProductTotals() {
+        let totalAmount = 0;
+        let totalItems = 0;
+        let totalCrates = 0;
+        let totalWeight = 0;
+
+        const productRows = document.querySelectorAll(".product-row");
+
+        productRows.forEach((row) => {
+          const select = row.querySelector(".product-select-input");
+          const quantityInput = row.querySelector(".quantity-input-field");
+          const priceInput = row.querySelector(".price-input-field");
+          const totalElement = row.querySelector(".product-total");
+
+          if (!select || !quantityInput || !priceInput || !totalElement) return;
+
+          const productId = select.value;
+          const quantity = parseInt(quantityInput.value) || 0;
+          const unitPrice = parseFloat(priceInput.value) || 0;
+
+          // Calculate row total
+          const rowTotal = quantity * unitPrice;
+          totalElement.textContent = `Total: $${rowTotal.toFixed(2)}`;
+
+          // Add to overall total
+          totalAmount += rowTotal;
+          totalItems += quantity;
+
+          // Calculate crates and weight if product is selected
+          if (productId) {
+            const product = products.find((p) => p.id === productId);
+            if (product && product.crate) {
+              // Calculate number of crates needed
+              const cratesNeeded = Math.ceil(
+                quantity / product.crate.crateSize
+              );
+              totalCrates += cratesNeeded;
+
+              // Estimate weight (this would need actual weight data from the API)
+              // For now, we'll use a placeholder calculation
+              const estimatedWeight = quantity * 0.5; // Placeholder: 0.5kg per item
+              totalWeight += estimatedWeight;
+            }
+          }
+        });
+
+        // Update summary
+        updateOrderSummary(totalAmount, totalItems, totalCrates, totalWeight);
+      }
+
+      function updateOrderSummary(
+        totalAmount,
+        totalItems,
+        totalCrates,
+        totalWeight
+      ) {
+        const taxAmount = totalAmount * (taxPercentage / 100);
+        const grandTotal = totalAmount + taxAmount;
+        const paidAmount =
+          parseFloat(document.getElementById("paid-amount").value) || 0;
+        const balanceAmount = grandTotal - paidAmount;
+
+        // Update summary display
+        const totalAmountEl = document.getElementById("summary-total-amount");
+        const taxAmountEl = document.getElementById("summary-tax-amount");
+        const grandTotalEl = document.getElementById("summary-grand-total");
+        const paidAmountEl = document.getElementById("summary-paid-amount");
+        const balanceAmountEl = document.getElementById(
+          "summary-balance-amount"
+        );
+
+        if (totalAmountEl)
+          totalAmountEl.textContent = `$${totalAmount.toFixed(2)}`;
+        if (taxAmountEl) taxAmountEl.textContent = `$${taxAmount.toFixed(2)}`;
+        if (grandTotalEl)
+          grandTotalEl.textContent = `$${grandTotal.toFixed(2)}`;
+        if (paidAmountEl)
+          paidAmountEl.textContent = `$${paidAmount.toFixed(2)}`;
+        if (balanceAmountEl)
+          balanceAmountEl.textContent = `$${balanceAmount.toFixed(2)}`;
+
+        // Update hidden fields for API submission
+        const totalAmountHidden = document.getElementById("total-amount");
+        const taxAmountHidden = document.getElementById("tax-amount");
+        const grandTotalHidden = document.getElementById("grand-total");
+        const balanceAmountHidden = document.getElementById("balance-amount");
+        const totalItemsHidden = document.getElementById("total-items");
+        const totalCratesHidden = document.getElementById("total-crates");
+        const totalWeightHidden = document.getElementById("total-weight");
+
+        if (totalAmountHidden) totalAmountHidden.value = totalAmount;
+        if (taxAmountHidden) taxAmountHidden.value = taxAmount;
+        if (grandTotalHidden) grandTotalHidden.value = grandTotal;
+        if (balanceAmountHidden) balanceAmountHidden.value = balanceAmount;
+        if (totalItemsHidden) totalItemsHidden.value = totalItems;
+        if (totalCratesHidden) totalCratesHidden.value = totalCrates;
+        if (totalWeightHidden) totalWeightHidden.value = totalWeight;
+      }
+
+      async function createShipment() {
+        clearMessages();
+
+        // Validate inputs
+        if (!selectedDistributor) {
+          showMessage("Please select a distributor");
+          return;
+        }
+
+        const customerRef = document
+          .getElementById("customer-ref")
+          .value.trim();
+        const paymentRef = document.getElementById("payment-ref").value.trim();
+        const branchId = document.getElementById("branch-id").value.trim();
+
+        if (!customerRef) {
+          showMessage("Please enter a customer reference number");
+          return;
+        }
+
+        if (!paymentRef) {
+          showMessage("Please enter a payment reference number");
+          return;
+        }
+
+        if (!branchId) {
+          showMessage("Please enter a branch ID");
+          return;
+        }
+
+        // Collect product data
+        const productRows = document.querySelectorAll(".product-row");
+        const shipmentProducts = [];
+
+        for (const row of productRows) {
+          const select = row.querySelector(".product-select-input");
+          const quantityInput = row.querySelector(".quantity-input-field");
+          const priceInput = row.querySelector(".price-input-field");
+
+          if (!select || !quantityInput || !priceInput) continue;
+
+          const productId = select.value;
+          const quantity = parseInt(quantityInput.value) || 0;
+          const unitPrice = parseFloat(priceInput.value) || 0;
+
+          if (!productId) {
+            showMessage("Please select a product for all rows");
+            return;
+          }
+
+          if (quantity <= 0) {
+            showMessage("Please enter a valid quantity for all products");
+            return;
+          }
+
+          if (unitPrice <= 0) {
+            showMessage("Please enter a valid unit price for all products");
+            return;
+          }
+
+          const product = products.find((p) => p.id === productId);
+          if (!product) {
+            showMessage("Invalid product selected");
+            return;
+          }
+
+          shipmentProducts.push({
+            orderQuantity: quantity,
+            unitAmount: unitPrice,
+            totalAmount: quantity * unitPrice,
+            product: product,
+          });
+        }
+
+        if (shipmentProducts.length === 0) {
+          showMessage("Please add at least one product");
+          return;
+        }
+
+        // Get values from hidden fields
+        const totalAmount =
+          parseFloat(document.getElementById("total-amount").value) || 0;
+        const taxAmount =
+          parseFloat(document.getElementById("tax-amount").value) || 0;
+        const grandTotalAmount =
+          parseFloat(document.getElementById("grand-total").value) || 0;
+        const paidAmount =
+          parseFloat(document.getElementById("paid-amount").value) || 0;
+        const balanceAmount =
+          parseFloat(document.getElementById("balance-amount").value) || 0;
+        const noOfItems =
+          parseInt(document.getElementById("total-items").value) || 0;
+        const noOfCrates =
+          parseInt(document.getElementById("total-crates").value) || 0;
+        const totalWeight =
+          parseFloat(document.getElementById("total-weight").value) || 0;
+
+        // Prepare shipment data
+        const shipmentData = {
+          balanceAmount: balanceAmount,
+          branchId: branchId,
+          customerReferenceNumber: customerRef,
+          distributor: selectedDistributor,
+          grandTotalAmount: grandTotalAmount,
+          netValue: totalAmount,
+          noOfCrates: noOfCrates,
+          noOfItems: noOfItems,
+          paidAmount: paidAmount,
+          paymentReferenceNumber: paymentRef,
+          taxAmount: taxAmount,
+          taxPercentage: taxPercentage,
+          totalAmount: totalAmount,
+          totalWeight: totalWeight,
+          products: shipmentProducts,
+        };
+
+        // Show loading
+        showSection(loadingSection);
+
+        try {
+          const token = bearerTokenInput.value.trim();
+
+          const response = await fetch(`${BASE_URL}/shipment`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(shipmentData),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `Failed to create shipment: ${response.status} - ${errorText}`
+            );
+          }
+
+          const result = await response.json();
+
+          showMessage("Shipment created successfully!", "success");
+
+          // Reset form after a delay
+          setTimeout(() => {
+            resetForm();
+          }, 2000);
+        } catch (error) {
+          console.error("Error creating shipment:", error);
+          showMessage(`Error: ${error.message}`);
+          showMultipleSections([productsSection, orderSummarySection]);
+        }
+      }
+
+      function resetForm() {
+        // Reset form fields
+        if (distributorSelect) distributorSelect.selectedIndex = 0;
+        selectedDistributor = null;
+
+        // Clear products
+        if (productsContainer) {
+          productsContainer.innerHTML = "";
+          addProductRow(); // Add one empty row
+        }
+
+        // Clear summary fields
+        const customerRef = document.getElementById("customer-ref");
+        const paymentRef = document.getElementById("payment-ref");
+        const branchId = document.getElementById("branch-id");
+        const paidAmount = document.getElementById("paid-amount");
+
+        if (customerRef) customerRef.value = "";
+        if (paymentRef) paymentRef.value = "";
+        if (branchId) branchId.value = "";
+        if (paidAmount) paidAmount.value = "0";
+
+        // Reset totals
+        updateProductTotals();
+
+        // Go back to distributor selection
+        showSection(distributorSection);
+      }
+
+      // Initialize with one product row
+      document.addEventListener("DOMContentLoaded", function () {
+        // Ensure we have at least one product row
+        if (document.querySelectorAll(".product-row").length === 0) {
+          addProductRow();
+        }
+      });
+    </script>
+  </body>
+</html>
