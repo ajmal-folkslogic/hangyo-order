@@ -384,7 +384,7 @@
 
     <script>
       // Configuration
-      const BASE_URL = "http://localhost:9098/api/v1";
+      const BASE_URL = "http://13.127.13.57/api/v1";
 
       // Global variables
       let distributors = [];
@@ -779,7 +779,9 @@
           .getElementById("customer-ref")
           .value.trim();
         const paymentRef = document.getElementById("payment-ref").value.trim();
-        const branchId = document.getElementById("branch-id").value.trim();
+        const branchId =
+          document.getElementById("branch-id").value.trim() ||
+          "79a072ad-b580-4d2b-b973-97e0631bd7d8";
 
         if (!customerRef) {
           showMessage("Please enter a customer reference number");
