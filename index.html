@@ -91,6 +91,15 @@
         box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
       }
 
+      .login-container {
+        display: flex;
+        gap: 15px;
+      }
+
+      .login-container .form-group {
+        flex: 1;
+      }
+
       .product-row {
         display: flex;
         gap: 10px;
@@ -221,6 +230,10 @@
       }
 
       @media (max-width: 768px) {
+        .login-container {
+          flex-direction: column;
+        }
+
         .product-row {
           flex-direction: column;
         }
@@ -242,16 +255,22 @@
       </header>
 
       <div class="card" id="auth-section">
-        <h2>Authentication</h2>
-        <div class="form-group">
-          <label for="bearer-token">Bearer Token</label>
-          <input
-            type="text"
-            id="bearer-token"
-            placeholder="Enter your bearer token"
-          />
+        <h2>Login</h2>
+        <div class="login-container">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email" />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+            />
+          </div>
         </div>
-        <button class="btn btn-primary" id="load-data-btn">Load Data</button>
+        <button class="btn btn-primary" id="login-btn">Login</button>
       </div>
 
       <div class="card hidden" id="distributor-section">
@@ -385,13 +404,14 @@
     <script>
       // Configuration
       const BASE_URL =
-        "http://localhost:9098/api/v1";
+        "https://ec2-3-110-171-118.ap-south-1.compute.amazonaws.com/api/v1";
 
       // Global variables
       let distributors = [];
       let products = [];
       let selectedDistributor = null;
       let taxPercentage = 19;
+      let authToken = null;
 
       // DOM Elements
       const authSection = document.getElementById("auth-section");
@@ -403,8 +423,9 @@
       const loadingSection = document.getElementById("loading-section");
       const messageContainer = document.getElementById("message-container");
 
-      const bearerTokenInput = document.getElementById("bearer-token");
-      const loadDataBtn = document.getElementById("load-data-btn");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const loginBtn = document.getElementById("login-btn");
       const distributorSelect = document.getElementById("distributor-select");
       const productsContainer = document.getElementById("products-container");
       const addProductBtn = document.getElementById("add-product-btn");
@@ -413,8 +434,8 @@
       // Event Listeners
       document.addEventListener("DOMContentLoaded", function () {
         // Check if elements exist before adding event listeners
-        if (loadDataBtn) {
-          loadDataBtn.addEventListener("click", loadData);
+        if (loginBtn) {
+          loginBtn.addEventListener("click", handleLogin);
         }
 
         if (distributorSelect) {
@@ -493,10 +514,12 @@
         });
       }
 
-      async function loadData() {
-        const token = bearerTokenInput.value.trim();
-        if (!token) {
-          showMessage("Please enter a bearer token");
+      async function handleLogin() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!email || !password) {
+          showMessage("Please enter both email and password");
           return;
         }
 
@@ -504,37 +527,12 @@
         showSection(loadingSection);
 
         try {
-          // Load distributors
-          const distributorsResponse = await fetch(`${BASE_URL}/distributor`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          // Simulate login API call
+          authToken = await simulateLogin(email, password);
 
-          if (!distributorsResponse.ok) {
-            throw new Error(
-              `Failed to load distributors: ${distributorsResponse.status}`
-            );
-          }
-
-          const distributorsData = await distributorsResponse.json();
-          distributors = distributorsData.content || [];
-
-          // Load products
-          const productsResponse = await fetch(`${BASE_URL}/product`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!productsResponse.ok) {
-            throw new Error(
-              `Failed to load products: ${productsResponse.status}`
-            );
-          }
-
-          const productsData = await productsResponse.json();
-          products = productsData.content || [];
+          // Load distributors and products
+          await loadDistributors();
+          await loadProducts();
 
           if (distributors.length === 0) {
             throw new Error("No distributors found");
@@ -553,9 +551,90 @@
           // Show distributor section
           showSection(distributorSection);
         } catch (error) {
-          console.error("Error loading data:", error);
+          console.error("Error during login:", error);
           showMessage(`Error: ${error.message}`);
           showSection(authSection);
+        }
+      }
+
+      // Simulate login API call
+      async function simulateLogin(email, password) {
+        try {
+          const response = await fetch(`${BASE_URL}/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email,
+              password: password,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message ||
+                `Login failed with status: ${response.status}`
+            );
+          }
+
+          const data = await response.json();
+
+          // Assuming the API returns a token in the response
+          // Adjust this based on your actual API response structure
+          if (data.content.accessToken) {
+            return data.content.accessToken;
+          } else if (data.accessToken) {
+            return data.accessToken;
+          } else if (data.data && data.data.token) {
+            return data.data.token;
+          } else {
+            throw new Error("No authentication token received from server");
+          }
+        } catch (error) {
+          console.error("Login API error:", error);
+          throw new Error(error.message || "Login failed. Please try again.");
+        }
+      }
+
+      async function loadDistributors() {
+        try {
+          const response = await fetch(`${BASE_URL}/distributor`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to load distributors: ${response.status}`);
+          }
+
+          const data = await response.json();
+          distributors = data.content || [];
+        } catch (error) {
+          console.error("Error loading distributors:", error);
+          throw error;
+        }
+      }
+
+      async function loadProducts() {
+        try {
+          const response = await fetch(`${BASE_URL}/product`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to load products: ${response.status}`);
+          }
+
+          const data = await response.json();
+          products = data.content || [];
+        } catch (error) {
+          console.error("Error loading products:", error);
+          throw error;
         }
       }
 
@@ -889,13 +968,11 @@
         showSection(loadingSection);
 
         try {
-          const token = bearerTokenInput.value.trim();
-
           const response = await fetch(`${BASE_URL}/shipment`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${authToken}`,
             },
             body: JSON.stringify(shipmentData),
           });
