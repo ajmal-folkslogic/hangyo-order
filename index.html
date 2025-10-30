@@ -340,8 +340,8 @@
           />
         </div>
         <div class="form-group">
-          <label for="branch-id">Branch ID</label>
-          <input type="text" id="branch-id" placeholder="Enter branch ID" />
+          <!-- <label for="branch-id">Branch ID</label>
+          <input type="text" id="branch-id" placeholder="Enter branch ID" /> -->
         </div>
         <div class="form-group">
           <label for="paid-amount">Paid Amount</label>
@@ -859,9 +859,7 @@
           .getElementById("customer-ref")
           .value.trim();
         const paymentRef = document.getElementById("payment-ref").value.trim();
-        const branchId =
-          document.getElementById("branch-id").value.trim() ||
-          "79a072ad-b580-4d2b-b973-97e0631bd7d8";
+        const branchId = "81fbd52f-e083-4959-a733-f1ba490d3e87";
 
         if (!customerRef) {
           showMessage("Please enter a customer reference number");
